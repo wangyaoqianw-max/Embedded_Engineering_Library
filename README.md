@@ -34,7 +34,7 @@
 | Protocol YMODEM | 原创 | 文件传输协议 | V1.0 | Single-file YMODEM Parser/Receiver | Transport/Sink 回调；不绑定 UART/RTOS | 来源工程 Host + STM32 板级闭环 PASS；Library Transport 重构待再次执行 Host Test | [查看说明](original/protocol_ymodem/README.md) |
 | Firmware Image | 原创 | 固件格式 / 版本 | V1.0 | 64 Byte Header、Version、CRC 数据合同 | 不包含 Slot 地址与设备容量策略 | 来源工程格式测试 PASS；Library 去 Slot 耦合测试待执行 | [查看说明](original/firmware_image/README.md) |
 | Firmware Storage | 原创 | 固件存储抽象 | V1.0 | A/B Image Storage Backend 与流式校验 | Backend 负责物理布局；不含 Metadata/Lifecycle | 来源工程存储链路 PASS；Library Backend 重构测试待执行 | [查看说明](original/firmware_storage/README.md) |
-| YMODEM Firmware Sink | 原创 | OTA 数据适配 | V1.0 | YMODEM → Firmware Storage，Header-last | 不负责 UART、Flash Driver、OTA 状态机 | 来源工程同类 Sink Host/板级 PASS；Library Backend 版本测试待执行 | [查看说明](original/ymodem_firmware_sink/README.md) |
+| YMODEM Firmware Sink | 原创 | OTA 数据适配 | V1.0 | YMODEM → Firmware Storage，Header-last | 不负责 UART、Flash Driver、OTA 状态机 | 来源工程同类 Sink Host/板级 PASS；Library Backend 版本测试待执行 | [查看说明](original/ymodem_firmware_sink/README.md) |\n| A/B Firmware Lifecycle | 原创 | OTA / Bootloader 状态管理 | V1.0 | Metadata 双副本、PENDING/TRIAL/ROLLBACK/NONE、Strict Confirm、Boot Decision | 不负责镜像安装、MCU Jump、Health 策略 | 来源 S10 软件验证 PASS、硬件 PARTIAL；Library 重构 Host Test 待执行 | [查看说明](original/ab_firmware_lifecycle/README.md) |
 | 嵌入式项目 C 代码设计规范 | 原创（AI 辅助整理） | 工程规范 / Code Review | V2.0 | 作为嵌入式 C 项目的规范起点和评审清单 | 需按项目裁剪；不替代 MISRA、CERT 或功能安全标准 | 已完成结构及仓库示例交叉检查 | [查看说明](original/嵌入式代码规范/README.md) |
 | LVGL | 第三方 | GUI / 图形库 | 8.3.11 | 嵌入式图形界面开发与学习参考 | 需要显示、输入、时钟、内存等平台适配；不是可直接运行的完整工程 | 来自开发板商家裁剪包；精确裁剪差异待追溯 | [查看说明](third_party/LVGL/README.md) |
 
