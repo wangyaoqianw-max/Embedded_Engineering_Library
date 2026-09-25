@@ -26,7 +26,7 @@
 
 | 资产 | 归属 | 技术类别 | 版本 | 用途 | 关键边界 | 评审状态 | 详细说明 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 基于五层架构 | 原创（AI 辅助） | 固件架构 / C 组件 | 组件 V1.1 | 分层架构、Platform Common/MCU/OS、FreeRTOS Adapter 和 SPSC Ring Buffer | Software I2C 仍依赖项目级时序配置；类型体系与并发语义仍需继续收敛 | 已在 DMA UART 与 OTA 两个 STM32F4 项目中复用部分核心模块 | [查看说明](original/基于五层架构/README.md) |
+| 基于五层架构 | 原创（AI 辅助） | 固件架构 / C 组件 | 组件 V1.2 | 分层架构、Platform Common/MCU/OS、STM32F4 Impl、FreeRTOS Adapter 和 SPSC Ring Buffer | Software I2C 与 IRQ Contract 仍有项目级配置/语义；类型体系与并发语义仍需继续收敛 | Platform/Impl 已在 DMA UART 与 OTA 两个 STM32F4 项目中复用 | [查看说明](original/基于五层架构/README.md) |
 | Common CRC | 原创 | 基础算法 / 数据校验 | V1.0 | CRC-8/SMBUS、CRC-16/XMODEM、CRC-32/ISO-HDLC | 非密码学完整性机制；当前为 bitwise 软件实现 | 标准向量 Host Test 通过 | [查看说明](original/common_crc/README.md) |
 | UART Service | 原创 | 通信服务 / DMA / Ring Buffer | V1.0 | 异步 UART RX、SPSC 缓冲、事件唤醒、统计与同步 TX | 依赖 Platform UART/OS；按单 Producer / 单 Consumer 设计 | 已在 DMA UART 与 OTA 两个项目复用 | [查看说明](original/uart_service/README.md) |
 | Diagnostics Solution | 原创 | 日志 / Crash Diagnostics | V1.0 | Service Log、Platform Log、EasyLogger/RTT Port、CmBacktrace、Cortex-M Fault Context | 第三方本体不入库；Fault 汇编当前为 Keil ARMASM；异步日志依赖当前 RTOS 配置 | 日志已跨两项目复用；来源 S05A 三类 Fault 板测 PASS；Library 重构测试待执行 | [查看说明](original/diagnostics_solution/README.md) |

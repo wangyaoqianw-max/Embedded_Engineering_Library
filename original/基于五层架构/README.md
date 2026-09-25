@@ -2,7 +2,7 @@
 
 ## 资产简介
 
-本资产提供一套面向 STM32 等嵌入式项目的分层固件骨架，采用 `APP → Service → Platform → Impl → HAL / Hardware` 的依赖方向。当前包含架构说明、SPSC 字节环形缓冲区、Platform 公共对象模型、GPIO/UART/SPI/I2C 等 MCU 抽象接口、OS 抽象接口、CMSIS-RTOS2/FreeRTOS Adapter 和 Board 基础类型定义。
+本资产提供一套面向 STM32 等嵌入式项目的分层固件骨架，采用 `APP → Service → Platform → Impl → HAL / Hardware` 的依赖方向。当前包含架构说明、SPSC 字节环形缓冲区、Platform 公共对象模型、GPIO/UART/SPI/I2C 等 MCU 抽象接口、OS 抽象接口、CMSIS-RTOS2/FreeRTOS Adapter、STM32F4 MCU Impl 和 Board 基础类型定义。
 
 它适合作为新项目的结构参考和模块起点，不是可直接下载运行的完整固件工程。
 
@@ -33,7 +33,7 @@ AI 辅助不改变本资产在仓库中的原创分类；如后续引入外部�
 └─ 软件架构说明.md                 # 分层职责与依赖原则
 ```
 
-当前 `01_APP/` 仍为空；`04_Impl/` 已加入 CMSIS-RTOS2/FreeRTOS Adapter，但尚未收录完整 MCU HAL Impl。
+当前 `01_APP/` 仍为空；`04_Impl/` 已加入 CMSIS-RTOS2/FreeRTOS Adapter，并新增 STM32F4 GPIO/SPI/UART/Delay/IRQ/Reset/Watchdog Impl；仍不是完整 BSP 或可直接运行工程。
 
 ## 依赖与适用环境
 
@@ -50,7 +50,7 @@ AI 辅助不改变本资产在仓库中的原创分类；如后续引入外部�
 1. 先阅读 `软件架构说明.md`，根据项目规模决定保留哪些层级。
 2. 为目标 MCU 和工具链审查或替换 `board_types.h`。
 3. 将 Platform 公共层作为上层接口的基础类型和对象模型。
-4. 在 Impl 层实现延时、外设、HAL、RTOS 和具体硬件能力。
+4. 可直接复用 `04_Impl/impl_mcu/stm32f4/` 作为 STM32F4 HAL Backend 起点，或为其他 MCU 实现等价 Impl。
 5. 使用 Ring Buffer 前由调用者提供后备存储；可用容量为 `storageSize - 1`。
 6. 在目标工程中补充单元测试、并发模型验证和硬件集成测试。
 
@@ -61,7 +61,7 @@ AI 辅助不改变本资产在仓库中的原创分类；如后续引入外部�
 - Ring Buffer 当前采用 Partial Write：空间不足时写入可容纳部分并返回 `PLATFORM_ERR_OVERFLOW`。
 - Ring Buffer 的 `volatile` 索引不能提供一般 C 线程模型所需的原子性和内存顺序保证。当前仅按受控的单 Producer / 单 Consumer 场景设计；用于多核、跨 Task 或 Task/ISR 并发前，需要结合目标平台增加原子操作、内存屏障或临界区，并重新验证。
 - `platform_size_t` 固定映射为 32 位无符号类型，不适合作为所有主机环境中通用的指针宽度或 `size_t` 替代品。
-- 本资产没有提供构建系统、完整示例工程、启动代码和目标板配置。
+- 本资产没有提供构建系统、完整示例工程、启动代码和目标板配置。STM32F4 Impl 依赖项目自行提供 HAL/CMSIS 与 CubeMX/手工初始化后的 Handle。
 
 ## 已知限制
 
@@ -69,18 +69,19 @@ AI 辅助不改变本资产在仓库中的原创分类；如后续引入外部�
 - `platform_object_set_state()` 未检查状态是否超出 `PLATFORM_OBJECT_STATE_MAX`。
 - Device 和 Service 的枚举参数检查只显式验证上界；负值或非枚举值的可移植校验语义尚未明确。
 - `platform_common/README.md` 和 `impl_board/README.md` 当前为空。
-- 尚未验证 MCU ABI、RTOS 并发、ISR 并发、大小端、性能、Flash/RAM 占用和实机行为。
+- 架构整体仍未统一验证 MCU ABI、大小端、性能和 Flash/RAM 占用；但 STM32F4 Impl 与 FreeRTOS Adapter 的多个子模块已经在两个真实 STM32F4 工程中使用。
 
 ## 验证情况
 
 - 使用 MinGW GCC 6.3.0，以 C99、`-Wall -Wextra -Wpedantic -Werror` 对 4 个 `.c` 文件完成语法编译检查：通过，无警告。
 - 使用仓库外测试程序检查 Ring Buffer 初始化、容量、写入、读取、回绕、部分写入、空读、零长度写入和重置，共 13 项断言：通过。
-- 未执行目标开发板构建、静态分析工具、覆盖率测试或并发压力测试。
+- 早期架构骨架本身未建立统一 CI/覆盖率；后续新增 STM32F4 Impl 来源工程已有 Host Test、Keil Build 与板级运行证据，Library Handle 注入重构后仍需重新执行统一测试。
 
 ## 修改记录
 
 | 日期 | 修改内容 |
 | --- | --- |
+| 2026-09-25 | 新增 STM32F4 MCU Impl：GPIO/SPI/UART/Delay/IRQ/Reset/Watchdog；SPI/UART 改为 HAL Handle 注入，不依赖 CubeMX 全局符号。 |
 | 2026-09-25 | 从两个实际 STM32F4 项目回收 Platform MCU、Platform OS 与 CMSIS-RTOS2/FreeRTOS Adapter；核心通信和 OS 抽象开始形成跨项目基线。 |
 | 2026-09-07 | 收录架构说明、Platform 公共层、Board 基础类型和 AI 辅助编写的 Ring Buffer；完成首次资产评审。 |
 
@@ -88,6 +89,13 @@ AI 辅助不改变本资产在仓库中的原创分类；如后续引入外部�
 
 架构说明具有较好的项目启动和职责划分参考价值，Ring Buffer 在明确单线程或受控 SPSC 条件后具备独立复用潜力。Platform 公共层目前更适合作为设计草案，不建议未经调整直接作为跨平台基础库：标准类型重定义、状态输入校验和并发语义需要先收敛，并在目标编译器与硬件上重新验证。
 
+
+## V1.2 新增模块说明
+
+- `04_Impl/impl_mcu/stm32f4/`：STM32F4 GPIO、SPI、UART、Delay、IRQ、Reset、Watchdog Backend。
+- SPI/UART 不再依赖 `hspi1/hspi2/huart1`，由调用者注入 HAL Handle。
+- UART 通过轻量 Context Registry 将 HAL 全局 Callback 路由回对应 Platform UART。
+- 详细边界见 `04_Impl/impl_mcu/stm32f4/README.md`。
 
 ## V1.1 新增模块说明
 
