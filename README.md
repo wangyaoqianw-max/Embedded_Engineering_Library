@@ -31,10 +31,7 @@
 | UART Service | 原创 | 通信服务 / DMA / Ring Buffer | V1.0 | 异步 UART RX、SPSC 缓冲、事件唤醒、统计与同步 TX | 依赖 Platform UART/OS；按单 Producer / 单 Consumer 设计 | 已在 DMA UART 与 OTA 两个项目复用 | [查看说明](original/uart_service/README.md) |
 | W25Q64 Platform Driver | 原创 | 存储驱动 / SPI NOR | V1.0 | W25Q64JV 读写、Page Program、Sector Erase | 非通用 SPI NOR 层；不含文件系统和掉电事务 | 来源 OTA 工程完成板测并用于后续 OTA 数据链路 | [查看说明](original/w25q64_driver/README.md) |
 | AT24C02 Platform Driver | 原创 | 存储驱动 / EEPROM | V1.0 | AT24C02 读取、分页写入、ACK Polling | 不含磨损均衡与上层事务一致性 | 来源 OTA 工程完成板测并用于 Metadata 持久化 | [查看说明](original/at24c02_driver/README.md) |
-| Protocol YMODEM | 原创 | 文件传输协议 | V1.0 | Single-file YMODEM Parser/Receiver | Transport/Sink 回调；不绑定 UART/RTOS | 来源工程 Host + STM32 板级闭环 PASS；Library Transport 重构待再次执行 Host Test | [查看说明](original/protocol_ymodem/README.md) |
-| Firmware Image | 原创 | 固件格式 / 版本 | V1.0 | 64 Byte Header、Version、CRC 数据合同 | 不包含 Slot 地址与设备容量策略 | 来源工程格式测试 PASS；Library 去 Slot 耦合测试待执行 | [查看说明](original/firmware_image/README.md) |
-| Firmware Storage | 原创 | 固件存储抽象 | V1.0 | A/B Image Storage Backend 与流式校验 | Backend 负责物理布局；不含 Metadata/Lifecycle | 来源工程存储链路 PASS；Library Backend 重构测试待执行 | [查看说明](original/firmware_storage/README.md) |
-| YMODEM Firmware Sink | 原创 | OTA 数据适配 | V1.0 | YMODEM → Firmware Storage，Header-last | 不负责 UART、Flash Driver、OTA 状态机 | 来源工程同类 Sink Host/板级 PASS；Library Backend 版本测试待执行 | [查看说明](original/ymodem_firmware_sink/README.md) |\n| A/B Firmware Lifecycle | 原创 | OTA / Bootloader 状态管理 | V1.0 | Metadata 双副本、PENDING/TRIAL/ROLLBACK/NONE、Strict Confirm、Boot Decision | 不负责镜像安装、MCU Jump、Health 策略 | 来源 S10 软件验证 PASS、硬件 PARTIAL；Library 重构 Host Test 待执行 | [查看说明](original/ab_firmware_lifecycle/README.md) |
+| A/B OTA Solution | 原创 | OTA / Bootloader 方案 | V1.0 | YMODEM、Firmware Image、A/B Storage、Header-last Sink、Metadata、Trial/Confirm/Rollback | 不含 MCU Flash 安装、Jump、Health Policy；CRC/Driver 作为外部通用依赖 | 来源工程软件验证 PASS、硬件 PARTIAL；Library 通用化 Host Test 待统一执行 | [查看说明](original/ab_ota_solution/README.md) |
 | 嵌入式项目 C 代码设计规范 | 原创（AI 辅助整理） | 工程规范 / Code Review | V2.0 | 作为嵌入式 C 项目的规范起点和评审清单 | 需按项目裁剪；不替代 MISRA、CERT 或功能安全标准 | 已完成结构及仓库示例交叉检查 | [查看说明](original/嵌入式代码规范/README.md) |
 | LVGL | 第三方 | GUI / 图形库 | 8.3.11 | 嵌入式图形界面开发与学习参考 | 需要显示、输入、时钟、内存等平台适配；不是可直接运行的完整工程 | 来自开发板商家裁剪包；精确裁剪差异待追溯 | [查看说明](third_party/LVGL/README.md) |
 
