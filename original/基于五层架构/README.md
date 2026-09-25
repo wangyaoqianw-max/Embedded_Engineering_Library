@@ -2,7 +2,7 @@
 
 ## 资产简介
 
-本资产提供一套面向 STM32 等嵌入式项目的分层固件骨架，采用 `APP → Service → Platform → Impl → HAL / Hardware` 的依赖方向。当前包含架构说明、SPSC 字节环形缓冲区、Platform 公共对象模型和 Board 基础类型定义。
+本资产提供一套面向 STM32 等嵌入式项目的分层固件骨架，采用 `APP → Service → Platform → Impl → HAL / Hardware` 的依赖方向。当前包含架构说明、SPSC 字节环形缓冲区、Platform 公共对象模型、GPIO/UART/SPI/I2C 等 MCU 抽象接口、OS 抽象接口、CMSIS-RTOS2/FreeRTOS Adapter 和 Board 基础类型定义。
 
 它适合作为新项目的结构参考和模块起点，不是可直接下载运行的完整固件工程。
 
@@ -33,7 +33,7 @@ AI 辅助不改变本资产在仓库中的原创分类；如后续引入外部�
 └─ 软件架构说明.md                 # 分层职责与依赖原则
 ```
 
-当前 `01_APP/` 为空，`04_Impl/` 只提供基础类型，没有芯片、HAL、RTOS 或外设的具体实现。
+当前 `01_APP/` 仍为空；`04_Impl/` 已加入 CMSIS-RTOS2/FreeRTOS Adapter，但尚未收录完整 MCU HAL Impl。
 
 ## 依赖与适用环境
 
@@ -81,8 +81,17 @@ AI 辅助不改变本资产在仓库中的原创分类；如后续引入外部�
 
 | 日期 | 修改内容 |
 | --- | --- |
+| 2026-09-25 | 从两个实际 STM32F4 项目回收 Platform MCU、Platform OS 与 CMSIS-RTOS2/FreeRTOS Adapter；核心通信和 OS 抽象开始形成跨项目基线。 |
 | 2026-09-07 | 收录架构说明、Platform 公共层、Board 基础类型和 AI 辅助编写的 Ring Buffer；完成首次资产评审。 |
 
 ## 复用性评审结论
 
 架构说明具有较好的项目启动和职责划分参考价值，Ring Buffer 在明确单线程或受控 SPSC 条件后具备独立复用潜力。Platform 公共层目前更适合作为设计草案，不建议未经调整直接作为跨平台基础库：标准类型重定义、状态输入校验和并发语义需要先收敛，并在目标编译器与硬件上重新验证。
+
+
+## V1.1 新增模块说明
+
+- `03_Platform/platform_mcu/`：GPIO、UART、SPI、Software I2C、IRQ、Reset、Watchdog 抽象。
+- `03_Platform/platform_os/`：Thread、Mutex、Semaphore、Queue、Notify、Event Flags、Timer、Time。
+- `04_Impl/impl_os/freertos/`：基于 CMSIS-RTOS2 的 FreeRTOS Adapter。
+- 当前 Software I2C 仍依赖项目级 `project_config.h` 时序宏，属于已识别的待解耦项。

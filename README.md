@@ -26,7 +26,11 @@
 
 | 资产 | 归属 | 技术类别 | 版本 | 用途 | 关键边界 | 评审状态 | 详细说明 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 基于五层架构 | 原创（AI 辅助） | 固件架构 / C 组件 | 组件 V1.0 | 分层架构参考、Platform 公共层和 SPSC Ring Buffer | 不是完整工程；类型体系、状态校验和并发语义仍需收敛 | GCC C99 语法检查及 Ring Buffer 单线程行为测试通过 | [查看说明](original/基于五层架构/README.md) |
+| 基于五层架构 | 原创（AI 辅助） | 固件架构 / C 组件 | 组件 V1.1 | 分层架构、Platform Common/MCU/OS、FreeRTOS Adapter 和 SPSC Ring Buffer | Software I2C 仍依赖项目级时序配置；类型体系与并发语义仍需继续收敛 | 已在 DMA UART 与 OTA 两个 STM32F4 项目中复用部分核心模块 | [查看说明](original/基于五层架构/README.md) |
+| Common CRC | 原创 | 基础算法 / 数据校验 | V1.0 | CRC-8/SMBUS、CRC-16/XMODEM、CRC-32/ISO-HDLC | 非密码学完整性机制；当前为 bitwise 软件实现 | 标准向量 Host Test 通过 | [查看说明](original/common_crc/README.md) |
+| UART Service | 原创 | 通信服务 / DMA / Ring Buffer | V1.0 | 异步 UART RX、SPSC 缓冲、事件唤醒、统计与同步 TX | 依赖 Platform UART/OS；按单 Producer / 单 Consumer 设计 | 已在 DMA UART 与 OTA 两个项目复用 | [查看说明](original/uart_service/README.md) |
+| W25Q64 Platform Driver | 原创 | 存储驱动 / SPI NOR | V1.0 | W25Q64JV 读写、Page Program、Sector Erase | 非通用 SPI NOR 层；不含文件系统和掉电事务 | 来源 OTA 工程完成板测并用于后续 OTA 数据链路 | [查看说明](original/w25q64_driver/README.md) |
+| AT24C02 Platform Driver | 原创 | 存储驱动 / EEPROM | V1.0 | AT24C02 读取、分页写入、ACK Polling | 不含磨损均衡与上层事务一致性 | 来源 OTA 工程完成板测并用于 Metadata 持久化 | [查看说明](original/at24c02_driver/README.md) |
 | 嵌入式项目 C 代码设计规范 | 原创（AI 辅助整理） | 工程规范 / Code Review | V2.0 | 作为嵌入式 C 项目的规范起点和评审清单 | 需按项目裁剪；不替代 MISRA、CERT 或功能安全标准 | 已完成结构及仓库示例交叉检查 | [查看说明](original/嵌入式代码规范/README.md) |
 | LVGL | 第三方 | GUI / 图形库 | 8.3.11 | 嵌入式图形界面开发与学习参考 | 需要显示、输入、时钟、内存等平台适配；不是可直接运行的完整工程 | 来自开发板商家裁剪包；精确裁剪差异待追溯 | [查看说明](third_party/LVGL/README.md) |
 
