@@ -7,7 +7,7 @@
  * @brief Platform I2C 同步事务公共接口实现
  * @author YaoQian Wang
  * @date 2026-09-02
- * @version V1.0
+ * @version V1.1
  *
  *****************************************************************************/
 
@@ -15,7 +15,6 @@
 #include "platform_i2c.h"
 
 #include "platform_def.h"
-#include "project_config.h"
 
 #include <stddef.h>
 //******************************** Includes *********************************//
@@ -76,7 +75,7 @@ static platform_error_t platform_i2c_wait_scl_high(platform_i2c_t *i2c)
     }
 
     /* 开漏写 HIGH 只表示释放线路，必须读取物理电平确认 SCL 真正变高。 */
-    while (waitedUs < PROJECT_SOFT_I2C_SCL_TIMEOUT_US) {
+    while (waitedUs < i2c->sclTimeoutUs) {
         result = platform_i2c_scl_read(i2c, &level);
         if (result != PLATFORM_ERR_OK) {
             return result;
@@ -125,14 +124,14 @@ static platform_error_t platform_i2c_start(platform_i2c_t *i2c)
     if (result != PLATFORM_ERR_OK) {
         return result;
     }
-    platform_delay_us(PROJECT_SOFT_I2C_HALF_PERIOD_US);
+    platform_delay_us(i2c->halfPeriodUs);
 
     /* SCL 为 HIGH 时将 SDA 从释放态拉低，形成 START / Repeated START。 */
     result = platform_i2c_sda_low(i2c);
     if (result != PLATFORM_ERR_OK) {
         return result;
     }
-    platform_delay_us(PROJECT_SOFT_I2C_HALF_PERIOD_US);
+    platform_delay_us(i2c->halfPeriodUs);
 
     return platform_i2c_scl_low(i2c);
 }
@@ -149,14 +148,14 @@ static platform_error_t platform_i2c_stop(platform_i2c_t *i2c)
     if (result != PLATFORM_ERR_OK) {
         return result;
     }
-    platform_delay_us(PROJECT_SOFT_I2C_HALF_PERIOD_US);
+    platform_delay_us(i2c->halfPeriodUs);
 
     /* SCL 为 HIGH 时释放 SDA，形成 STOP 并使总线回到 Idle。 */
     result = platform_i2c_sda_release(i2c);
     if (result != PLATFORM_ERR_OK) {
         return result;
     }
-    platform_delay_us(PROJECT_SOFT_I2C_HALF_PERIOD_US);
+    platform_delay_us(i2c->halfPeriodUs);
 
     return PLATFORM_ERR_OK;
 }
@@ -179,19 +178,19 @@ static platform_error_t platform_i2c_write_bit(
     if (result != PLATFORM_ERR_OK) {
         return result;
     }
-    platform_delay_us(PROJECT_SOFT_I2C_HALF_PERIOD_US);
+    platform_delay_us(i2c->halfPeriodUs);
 
     result = platform_i2c_wait_scl_high(i2c);
     if (result != PLATFORM_ERR_OK) {
         return result;
     }
-    platform_delay_us(PROJECT_SOFT_I2C_HALF_PERIOD_US);
+    platform_delay_us(i2c->halfPeriodUs);
 
     result = platform_i2c_scl_low(i2c);
     if (result != PLATFORM_ERR_OK) {
         return result;
     }
-    platform_delay_us(PROJECT_SOFT_I2C_HALF_PERIOD_US);
+    platform_delay_us(i2c->halfPeriodUs);
 
     return PLATFORM_ERR_OK;
 }
@@ -210,13 +209,13 @@ static platform_error_t platform_i2c_read_bit(
     if (result != PLATFORM_ERR_OK) {
         return result;
     }
-    platform_delay_us(PROJECT_SOFT_I2C_HALF_PERIOD_US);
+    platform_delay_us(i2c->halfPeriodUs);
 
     result = platform_i2c_wait_scl_high(i2c);
     if (result != PLATFORM_ERR_OK) {
         return result;
     }
-    platform_delay_us(PROJECT_SOFT_I2C_HALF_PERIOD_US);
+    platform_delay_us(i2c->halfPeriodUs);
 
     result = platform_i2c_sda_read(i2c, level);
     if (result != PLATFORM_ERR_OK) {
@@ -227,7 +226,7 @@ static platform_error_t platform_i2c_read_bit(
     if (result != PLATFORM_ERR_OK) {
         return result;
     }
-    platform_delay_us(PROJECT_SOFT_I2C_HALF_PERIOD_US);
+    platform_delay_us(i2c->halfPeriodUs);
 
     return PLATFORM_ERR_OK;
 }
@@ -242,13 +241,13 @@ static platform_error_t platform_i2c_wait_ack(
     if (result != PLATFORM_ERR_OK) {
         return result;
     }
-    platform_delay_us(PROJECT_SOFT_I2C_HALF_PERIOD_US);
+    platform_delay_us(i2c->halfPeriodUs);
 
     result = platform_i2c_wait_scl_high(i2c);
     if (result != PLATFORM_ERR_OK) {
         return result;
     }
-    platform_delay_us(PROJECT_SOFT_I2C_HALF_PERIOD_US);
+    platform_delay_us(i2c->halfPeriodUs);
 
     result = platform_i2c_sda_read(i2c, &level);
     if (result != PLATFORM_ERR_OK) {
@@ -259,7 +258,7 @@ static platform_error_t platform_i2c_wait_ack(
     if (result != PLATFORM_ERR_OK) {
         return result;
     }
-    platform_delay_us(PROJECT_SOFT_I2C_HALF_PERIOD_US);
+    platform_delay_us(i2c->halfPeriodUs);
 
     *isAcknowledged = (level == PLATFORM_GPIO_LEVEL_LOW) ?
         PLATFORM_TRUE : PLATFORM_FALSE;
@@ -477,13 +476,13 @@ static platform_error_t platform_i2c_bus_recover(platform_i2c_t *i2c)
         if (result != PLATFORM_ERR_OK) {
             return result;
         }
-        platform_delay_us(PROJECT_SOFT_I2C_HALF_PERIOD_US);
+        platform_delay_us(i2c->halfPeriodUs);
 
         result = platform_i2c_wait_scl_high(i2c);
         if (result != PLATFORM_ERR_OK) {
             return result;
         }
-        platform_delay_us(PROJECT_SOFT_I2C_HALF_PERIOD_US);
+        platform_delay_us(i2c->halfPeriodUs);
 
         result = platform_i2c_sda_read(i2c, &sdaLevel);
         if (result != PLATFORM_ERR_OK) {
@@ -507,6 +506,8 @@ static void platform_i2c_clear_binding(platform_i2c_t *i2c)
     i2c->name = NULL;
     i2c->scl = NULL;
     i2c->sda = NULL;
+    i2c->halfPeriodUs = 0U;
+    i2c->sclTimeoutUs = 0U;
     i2c->initialized = PLATFORM_FALSE;
 }
 
@@ -539,6 +540,26 @@ platform_error_t platform_i2c_init(
     platform_gpio_t *scl,
     platform_gpio_t *sda)
 {
+    const platform_i2c_config_t defaultConfig = {
+        PLATFORM_I2C_DEFAULT_HALF_PERIOD_US,
+        PLATFORM_I2C_DEFAULT_SCL_TIMEOUT_US
+    };
+
+    return platform_i2c_init_with_config(
+        i2c,
+        name,
+        scl,
+        sda,
+        &defaultConfig);
+}
+
+platform_error_t platform_i2c_init_with_config(
+    platform_i2c_t *i2c,
+    const char *name,
+    platform_gpio_t *scl,
+    platform_gpio_t *sda,
+    const platform_i2c_config_t *config)
+{
     const platform_gpio_config_t gpioConfig = {
         PLATFORM_GPIO_DIRECTION_OUTPUT,
         PLATFORM_GPIO_PULL_NONE,
@@ -548,11 +569,13 @@ platform_error_t platform_i2c_init(
     platform_gpio_level_t sdaLevel = PLATFORM_GPIO_LEVEL_LOW;
     platform_error_t result = PLATFORM_ERR_OK;
 
-    if (i2c == NULL) {
+    if ((i2c == NULL) || (config == NULL)) {
         return PLATFORM_ERR_INVALID_PARAM;
     }
 
-    if ((scl == NULL) || (sda == NULL)) {
+    if ((scl == NULL) || (sda == NULL) ||
+        (config->halfPeriodUs == 0U) ||
+        (config->sclTimeoutUs == 0U)) {
         return PLATFORM_ERR_INVALID_PARAM;
     }
 
@@ -563,6 +586,8 @@ platform_error_t platform_i2c_init(
     i2c->name = name;
     i2c->scl = scl;
     i2c->sda = sda;
+    i2c->halfPeriodUs = config->halfPeriodUs;
+    i2c->sclTimeoutUs = config->sclTimeoutUs;
 
     result = platform_gpio_configure(scl, &gpioConfig);
     if (result != PLATFORM_ERR_OK) {

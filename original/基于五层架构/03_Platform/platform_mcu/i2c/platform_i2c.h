@@ -7,7 +7,7 @@
  * @brief Platform I2C 同步事务公共接口
  * @author YaoQian Wang
  * @date 2026-09-02
- * @version V1.0
+ * @version V1.1
  *
  *****************************************************************************/
 
@@ -22,15 +22,27 @@
 //******************************** Defines *********************************//
 /*首次初始化前使用此宏初始化 I2C 对象存储*/
 #define PLATFORM_I2C_INITIALIZER {0}
+
+/*来源工程已验证的 Software I2C 默认时序。*/
+#define PLATFORM_I2C_DEFAULT_HALF_PERIOD_US   (5U)
+#define PLATFORM_I2C_DEFAULT_SCL_TIMEOUT_US   (100U)
 //******************************** Defines *********************************//
 
 //******************************** Declaring *********************************//
-/*Platform I2C 轻量同步总线对象，GPIO 存储由调用者拥有*/
+typedef struct
+{
+    uint32_t halfPeriodUs;
+    uint32_t sclTimeoutUs;
+} platform_i2c_config_t;
+
+/*Platform Software I2C 轻量同步总线对象，GPIO 存储由调用者拥有。*/
 typedef struct
 {
     const char *name;
     platform_gpio_t *scl;
     platform_gpio_t *sda;
+    uint32_t halfPeriodUs;
+    uint32_t sclTimeoutUs;
     platform_bool_t initialized;
 } platform_i2c_t;
 
@@ -47,6 +59,23 @@ platform_error_t platform_i2c_init(
     const char *name,
     platform_gpio_t *scl,
     platform_gpio_t *sda);
+
+/**
+ * @brief 使用实例级时序配置绑定 Software I2C
+ * @param[in,out] i2c : 使用 PLATFORM_I2C_INITIALIZER 清零的 I2C 对象
+ * @param[in] name : I2C 总线名称，可为 NULL
+ * @param[in] scl : 调用者拥有的 SCL GPIO 对象
+ * @param[in] sda : 调用者拥有的 SDA GPIO 对象
+ * @param[in] config : Software I2C 时序配置
+ * @return platform_error_t : 函数执行状态
+ * @note halfPeriodUs 和 sclTimeoutUs 必须大于 0。
+ */
+platform_error_t platform_i2c_init_with_config(
+    platform_i2c_t *i2c,
+    const char *name,
+    platform_gpio_t *scl,
+    platform_gpio_t *sda,
+    const platform_i2c_config_t *config);
 
 /**
  * @brief 探测 7-bit 地址从设备是否响应

@@ -11,7 +11,7 @@
 - 主要作者：YaoQian Wang。
 - 编写方式：维护者设计和编写，其中 Ring Buffer 由 AI 辅助编写。
 - 第三方代码来源：未使用已识别的具体第三方源码作为改编基础。
-- 当前版本：各代码文件标记为 `V1.0`，资产整体尚未建立统一版本号。
+- 当前版本：资产整体 `V1.3`；历史代码文件仍保留各自文件版本号。
 
 AI 辅助不改变本资产在仓库中的原创分类；如后续引入外部代码，应单独记录来源、版本和许可证。
 
@@ -81,6 +81,7 @@ AI 辅助不改变本资产在仓库中的原创分类；如后续引入外部�
 
 | 日期 | 修改内容 |
 | --- | --- |
+| 2026-09-26 | Software I2C 去除 `project_config.h` 依赖，新增实例级 Timing 配置与兼容默认入口。 |
 | 2026-09-25 | 新增 STM32F4 MCU Impl：GPIO/SPI/UART/Delay/IRQ/Reset/Watchdog；SPI/UART 改为 HAL Handle 注入，不依赖 CubeMX 全局符号。 |
 | 2026-09-25 | 从两个实际 STM32F4 项目回收 Platform MCU、Platform OS 与 CMSIS-RTOS2/FreeRTOS Adapter；核心通信和 OS 抽象开始形成跨项目基线。 |
 | 2026-09-07 | 收录架构说明、Platform 公共层、Board 基础类型和 AI 辅助编写的 Ring Buffer；完成首次资产评审。 |
@@ -89,6 +90,13 @@ AI 辅助不改变本资产在仓库中的原创分类；如后续引入外部�
 
 架构说明具有较好的项目启动和职责划分参考价值，Ring Buffer 在明确单线程或受控 SPSC 条件后具备独立复用潜力。Platform 公共层目前更适合作为设计草案，不建议未经调整直接作为跨平台基础库：标准类型重定义、状态输入校验和并发语义需要先收敛，并在目标编译器与硬件上重新验证。
 
+
+## V1.3 新增模块说明
+
+- `03_Platform/platform_mcu/i2c/`：Software I2C 不再依赖项目级 `project_config.h`。
+- 新增 `platform_i2c_config_t` 与 `platform_i2c_init_with_config()`，支持每条 Software I2C Bus 独立配置 half period 与 SCL timeout。
+- 原 `platform_i2c_init()` 保留，默认使用来源工程验证过的 5 us / 100 us 配置。
+- 详细边界见 `03_Platform/platform_mcu/i2c/README.md`。
 
 ## V1.2 新增模块说明
 
@@ -102,4 +110,4 @@ AI 辅助不改变本资产在仓库中的原创分类；如后续引入外部�
 - `03_Platform/platform_mcu/`：GPIO、UART、SPI、Software I2C、IRQ、Reset、Watchdog 抽象。
 - `03_Platform/platform_os/`：Thread、Mutex、Semaphore、Queue、Notify、Event Flags、Timer、Time。
 - `04_Impl/impl_os/freertos/`：基于 CMSIS-RTOS2 的 FreeRTOS Adapter。
-- 当前 Software I2C 仍依赖项目级 `project_config.h` 时序宏，属于已识别的待解耦项。
+- 当前 Software I2C 已完成项目级时序解耦；下一阶段若引入 Hardware I2C，建议进一步把公共 I2C API 与 Software/Hardware Backend 分离。
