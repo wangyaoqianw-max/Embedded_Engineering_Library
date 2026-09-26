@@ -4,7 +4,7 @@
 
 本目录整合一套面向 Cortex-M 的日志与崩溃诊断方案，覆盖 Service Log、Platform Log、EasyLogger 适配、SEGGER RTT 输出、CmBacktrace 工程适配，以及 HardFault / MemManage / BusFault / UsageFault 现场捕获。
 
-目标是把“正常运行日志”和“异常现场诊断”放在同一方案边界内，同时不复制第三方中间件源码。
+目标是把“正常运行日志”和“异常现场诊断”放在同一方案边界内。第三方中间件本体集中保存在 `third_party/`，本目录只保留自有 Service、Platform Contract、Port/Adapter 与 Fault 集成代码。
 
 ## 来源与版本
 
@@ -21,7 +21,8 @@
 diagnostics_solution/
 ├─ config/
 │  ├─ service_log_config.h
-│  └─ diagnostics_config.h
+│  ├─ diagnostics_config.h
+│  └─ cmb_user_cfg.h
 ├─ service_log/
 │  ├─ service_log.c
 │  └─ service_log.h
@@ -106,25 +107,27 @@ Cortex-M Fault Context   CmBacktrace
 - 受控 Fault Test 开关
 - Fault Test 类型与参数
 
+`cmb_user_cfg.h` 负责 CmBacktrace 的 Cortex-M4 / FreeRTOS / RTT 输出配置。
+
 迁移到新项目时优先修改配置，而不是修改 Service 或 Port 实现。
 
 ## 第三方依赖
 
-本目录只保存项目自有适配代码，不复制下列第三方源码：
+本目录只保存项目自有适配代码；下列第三方本体现在统一保存在仓库 `third_party/`：
 
 ### EasyLogger
 
-来源工程使用 EasyLogger 2.2.99。其源码头声明 MIT License，Copyright 2015-2019 Armink。
+来源工程使用 EasyLogger 2.2.99，对应 `third_party/EasyLogger/v2.2.99/`。平台 `elog_port.c` 因包含项目适配，归入 `adapted/easylogger_rtt_cmsisrtos_port/`。
 
 ### CmBacktrace
 
-来源工程中的 CmBacktrace 带独立 MIT License，Copyright 2016-2020 Armink。
+来源工程使用 CmBacktrace 1.5.0，对应 `third_party/CmBacktrace/v1.5.0/`。项目 `cmb_user_cfg.h` 保留在本方案配置目录。
 
 ### SEGGER RTT
 
-来源工程使用 RTT 7.92。SEGGER RTT 源码允许在保留版权、条件和免责声明的前提下重新分发，但本资产不复制 RTT 源码，项目应从合法来源自行接入。
+来源工程使用 SEGGER RTT 7.92，对应 `third_party/SEGGER_RTT/v7.92/`。再分发时继续遵守 SEGGER 源文件头中的版权、条件和免责声明。
 
-因此本目录仍属于 `original/`：保存的是项目自有 Service、Platform Contract、Port 与 Fault Adapter，而不是第三方本体。
+因此本目录仍属于 `original/`：第三方本体、改编 Port、原创 Diagnostics 三类资产保持分区。
 
 ## 使用方式
 
@@ -142,7 +145,7 @@ diagnostics_fault_init()
 Application start
 ```
 
-工程需要自行提供 EasyLogger、SEGGER RTT、CmBacktrace 和对应 include path。
+仓库内可直接从版本化 `third_party/` 目录选择 EasyLogger、SEGGER RTT、CmBacktrace，并配置对应 include path；EasyLogger 平台 Port 使用 `adapted/easylogger_rtt_cmsisrtos_port/`。
 
 Fault Handler 的向量归属必须唯一；如果 startup 文件、HAL 模板或 CmBacktrace 自带汇编也定义了同名 Handler，需要只保留一个 Owner。
 
@@ -185,7 +188,8 @@ Library 本次把项目配置改为通用配置头，但当前会话环境未实
 
 ## 修改记录
 
-- 2026-09-25：从 DMA UART 与 OTA 工程提取日志和 Crash Diagnostics；去除项目级日志配置名和固定 CmBacktrace 产品信息；保留第三方依赖为外部依赖。
+- 2026-09-26：第三方依赖正式归档到版本化 `third_party/`；补回 `cmb_user_cfg.h`；EasyLogger 项目 Port 单独归入 `adapted/`。
+- 2026-09-25：从 DMA UART 与 OTA 工程提取日志和 Crash Diagnostics；去除项目级日志配置名和固定 CmBacktrace 产品信息。
 
 ## 复用性评审结论
 
