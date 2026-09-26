@@ -38,7 +38,7 @@
 | DHT20 Driver | 原创 | 传感器 / 温湿度 / I2C | V1.0 | AC 33 00 测量、80 ms 等待、CRC-8、状态检查、RH/T 转换 | 固定同步读取；完整 Driver 板级协议 checklist 尚未形成完成证据 | 来源有 Host Test 与 DHT20/Software-I2C 连通性基线；完整板级协议验证未宣称 PASS | [查看说明](original/dht20_driver/README.md) |
 | 嵌入式项目 C 代码设计规范 | 原创（AI 辅助整理） | 工程规范 / Code Review | V2.0 | 作为嵌入式 C 项目的规范起点和评审清单 | 需按项目裁剪；不替代 MISRA、CERT 或功能安全标准 | 已完成结构及仓库示例交叉检查 | [查看说明](original/嵌入式代码规范/README.md) |
 | EasyLogger RTT + CMSIS-RTOS2 Port | 改编 | 日志平台适配 | 基于 EasyLogger 2.2.99 | EasyLogger → CMSIS-RTOS2/FreeRTOS + SEGGER RTT | 仍含 HAL Tick / RTOS 依赖，尚未完全平台化 | 来源 OTA 工程已实际使用；归类为改编而非第三方原版 | [查看说明](adapted/easylogger_rtt_cmsisrtos_port/README.md) |
-| LVGL | 第三方 | GUI / 图形库 | v8.3 / 8.3.11 | 嵌入式图形界面开发与学习参考；为 v9.4 并存预留版本目录 | 8.3 为商家裁剪包；不同大版本 API/配置不可混用 | 当前收录 v8.3；v9.4 待后续引入 | [查看说明](third_party/LVGL/README.md) |
+| LVGL | 第三方 | GUI / 图形库 | v8.3 / 8.3.11；v9.4 / 9.4.0 | 嵌入式图形界面开发、学习与移植；v9.4 面向 STM32 移植及 GUI Guider 生成代码集成 | v8/v9 API 与配置不可混用；GUI Guider 输出需匹配 LVGL 版本；STM32 移植未验证 | v8.3 已收录；v9.4 保留源码内容已做哈希核对，未构建或实机验证 | [查看说明](third_party/LVGL/README.md) |
 | CmBacktrace | 第三方 | Crash Diagnostics | 1.5.0 | Cortex-M Fault / Call Stack Backtrace | 项目配置与 Fault Adapter 不属于第三方本体 | OTA 工程 S05A 已验证该版本 | [查看说明](third_party/CmBacktrace/README.md) |
 | EasyLogger | 第三方 | Logging Middleware | 2.2.99 | 日志等级、过滤、异步/缓冲输出、插件 | 当前 `elog_cfg.h` 是已使用配置快照；平台 Port 单独归入 adapted | DMA UART 与 OTA 工程均使用该版本 | [查看说明](third_party/EasyLogger/README.md) |
 | SEGGER RTT | 第三方 | Debug Transport / RTT | 7.92 | J-Link 实时日志、CmBacktrace 输出、调试数据通道 | 非 MIT；遵守 SEGGER 源文件头再分发条件 | OTA/DMA UART 诊断链使用该版本 | [查看说明](third_party/SEGGER_RTT/README.md) |

@@ -6,7 +6,7 @@
 
 | 资产 | 当前版本 | 直接来源 | 许可证/条件 |
 | --- | --- | --- | --- |
-| LVGL | v8.3 / 8.3.11 | 开发板商家裁剪包 | MIT |
+| LVGL | v8.3 / 8.3.11；v9.4 / 9.4.0 | v8.3 为开发板商家裁剪包；v9.4 为用户提供源码目录，版本宏已核对 | MIT |
 | CmBacktrace | v1.5.0 | 已验证 OTA Vendor Snapshot | MIT |
 | EasyLogger | v2.2.99 | 已验证 OTA Vendor Snapshot | MIT |
 | SEGGER RTT | v7.92 | 已验证 OTA Vendor Snapshot | SEGGER 源文件头再分发条件 |
