@@ -4,87 +4,79 @@
  * All Rights Reserved.
  *
  * @file platform_i2c.h
- * @brief Platform I2C 同步事务公共接口
+ * @brief Platform I2C 同步事务公共契约
  * @author YaoQian Wang
- * @date 2026-09-02
- * @version V1.1
+ * @date 2026-09-27
+ * @version V2.0
  *
  *****************************************************************************/
 
 #ifndef PLATFORM_I2C_H
 #define PLATFORM_I2C_H
 
-//******************************** Includes *********************************//
 #include "platform_error.h"
-#include "platform_gpio.h"
-//******************************** Includes *********************************//
+#include "platform_types.h"
 
-//******************************** Defines *********************************//
-/*首次初始化前使用此宏初始化 I2C 对象存储*/
 #define PLATFORM_I2C_INITIALIZER {0}
 
-/*来源工程已验证的 Software I2C 默认时序。*/
-#define PLATFORM_I2C_DEFAULT_HALF_PERIOD_US   (5U)
-#define PLATFORM_I2C_DEFAULT_SCL_TIMEOUT_US   (100U)
-//******************************** Defines *********************************//
+typedef struct platform_i2c platform_i2c_t;
 
-//******************************** Declaring *********************************//
+/**
+ * @brief I2C Backend 操作表
+ * @note Platform 只定义同步 I2C 能力；START/STOP、GPIO Bit-bang、HAL I2C 等实现细节均属于 Backend。
+ */
 typedef struct
 {
-    uint32_t halfPeriodUs;
-    uint32_t sclTimeoutUs;
-} platform_i2c_config_t;
+    platform_error_t (*init)(platform_i2c_t *i2c);
+    platform_error_t (*probe)(platform_i2c_t *i2c, uint8_t address);
+    platform_error_t (*write)(
+        platform_i2c_t *i2c,
+        uint8_t address,
+        const uint8_t *data,
+        uint16_t length);
+    platform_error_t (*read)(
+        platform_i2c_t *i2c,
+        uint8_t address,
+        uint8_t *data,
+        uint16_t length);
+    platform_error_t (*writeRead)(
+        platform_i2c_t *i2c,
+        uint8_t address,
+        const uint8_t *txData,
+        uint16_t txLength,
+        uint8_t *rxData,
+        uint16_t rxLength);
+    platform_error_t (*deinit)(platform_i2c_t *i2c);
+} platform_i2c_ops_t;
 
-/*Platform Software I2C 轻量同步总线对象，GPIO 存储由调用者拥有。*/
+/**
+ * @brief Platform I2C 总线对象
+ * @note ops 与 implContext 均为非拥有型引用，必须在 I2C 对象使用期间保持有效。
+ */
+struct platform_i2c
+{
+    const char *name;
+    const platform_i2c_ops_t *ops;
+    void *implContext;
+    platform_bool_t initialized;
+};
+
 typedef struct
 {
     const char *name;
-    platform_gpio_t *scl;
-    platform_gpio_t *sda;
-    uint32_t halfPeriodUs;
-    uint32_t sclTimeoutUs;
-    platform_bool_t initialized;
-} platform_i2c_t;
+    const platform_i2c_ops_t *ops;
+    void *implContext;
+} platform_i2c_init_params_t;
 
 /**
- * @brief 绑定 Platform I2C 对象与 SCL/SDA GPIO
- * @param[in,out] i2c : 使用 PLATFORM_I2C_INITIALIZER 清零的 I2C 对象
- * @param[in] name : I2C 总线名称，可为 NULL
- * @param[in] scl : 调用者拥有的 SCL GPIO 对象
- * @param[in] sda : 调用者拥有的 SDA GPIO 对象
- * @return platform_error_t : 函数执行状态
+ * @brief 绑定并初始化一个 I2C Backend
  */
 platform_error_t platform_i2c_init(
     platform_i2c_t *i2c,
-    const char *name,
-    platform_gpio_t *scl,
-    platform_gpio_t *sda);
-
-/**
- * @brief 使用实例级时序配置绑定 Software I2C
- * @param[in,out] i2c : 使用 PLATFORM_I2C_INITIALIZER 清零的 I2C 对象
- * @param[in] name : I2C 总线名称，可为 NULL
- * @param[in] scl : 调用者拥有的 SCL GPIO 对象
- * @param[in] sda : 调用者拥有的 SDA GPIO 对象
- * @param[in] config : Software I2C 时序配置
- * @return platform_error_t : 函数执行状态
- * @note halfPeriodUs 和 sclTimeoutUs 必须大于 0。
- */
-platform_error_t platform_i2c_init_with_config(
-    platform_i2c_t *i2c,
-    const char *name,
-    platform_gpio_t *scl,
-    platform_gpio_t *sda,
-    const platform_i2c_config_t *config);
+    const platform_i2c_init_params_t *params);
 
 /**
  * @brief 探测 7-bit 地址从设备是否响应
- * @param[in,out] i2c : 已初始化 I2C 对象
- * @param[in] address : 7-bit 从设备地址
- * @return PLATFORM_ERR_OK : 地址阶段收到 ACK
- * @return PLATFORM_ERR_NOT_FOUND : 地址阶段收到 NACK
- * @return 其他值 : 总线或事务错误
- * @note 本函数只执行一次 START、SLA+W、ACK/NACK 和 STOP，不发送数据字节。
  */
 platform_error_t platform_i2c_probe(
     platform_i2c_t *i2c,
@@ -92,11 +84,6 @@ platform_error_t platform_i2c_probe(
 
 /**
  * @brief 向 7-bit 地址从设备写入数据
- * @param[in,out] i2c : 已初始化 I2C 对象
- * @param[in] address : 7-bit 从设备地址
- * @param[in] data : 待发送数据
- * @param[in] length : 待发送字节数，必须大于 0
- * @return platform_error_t : 函数执行状态
  */
 platform_error_t platform_i2c_write(
     platform_i2c_t *i2c,
@@ -106,11 +93,6 @@ platform_error_t platform_i2c_write(
 
 /**
  * @brief 从 7-bit 地址从设备读取数据
- * @param[in,out] i2c : 已初始化 I2C 对象
- * @param[in] address : 7-bit 从设备地址
- * @param[out] data : 接收数据缓冲区
- * @param[in] length : 接收字节数，必须大于 0
- * @return platform_error_t : 函数执行状态
  */
 platform_error_t platform_i2c_read(
     platform_i2c_t *i2c,
@@ -119,14 +101,7 @@ platform_error_t platform_i2c_read(
     uint16_t length);
 
 /**
- * @brief 先写入数据再发起 Repeated START 读取数据
- * @param[in,out] i2c : 已初始化 I2C 对象
- * @param[in] address : 7-bit 从设备地址
- * @param[in] txData : 待发送数据
- * @param[in] txLength : 待发送字节数，必须大于 0
- * @param[out] rxData : 接收数据缓冲区
- * @param[in] rxLength : 接收字节数，必须大于 0
- * @return platform_error_t : 函数执行状态
+ * @brief 先写后读，Backend 必须保证中间使用 Repeated START 或等价硬件语义
  */
 platform_error_t platform_i2c_write_read(
     platform_i2c_t *i2c,
@@ -137,11 +112,9 @@ platform_error_t platform_i2c_write_read(
     uint16_t rxLength);
 
 /**
- * @brief 解除 I2C 对象绑定
- * @param[in,out] i2c : 已初始化 I2C 对象
- * @return platform_error_t : 函数执行状态
+ * @brief 反初始化 Backend 并解除 Platform I2C 绑定
+ * @note 即使 Backend 清理返回错误，Platform 绑定仍会被清除。
  */
 platform_error_t platform_i2c_deinit(platform_i2c_t *i2c);
-//******************************** Declaring *********************************//
 
 #endif
