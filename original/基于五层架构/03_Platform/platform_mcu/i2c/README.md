@@ -1,116 +1,117 @@
-# Platform Software I2C
+# Platform I2C
 
-## 资产简介
+## 资产定位
 
-该模块提供基于 Platform GPIO 的同步 Software I2C，实现 7-bit Address、Write、Read、Repeated START Write-Read、ACK/NACK、Clock Stretching 等待和总线恢复。
+本目录只定义 MCU 无关的同步 I2C 能力契约，不再实现 GPIO Bit-bang 时序。
 
-## V1.1 变化
-
-来源工程原实现直接依赖：
+Platform 对上提供稳定接口：
 
 ```text
-project_config.h
-PROJECT_SOFT_I2C_HALF_PERIOD_US
-PROJECT_SOFT_I2C_SCL_TIMEOUT_US
+platform_i2c_probe()
+platform_i2c_write()
+platform_i2c_read()
+platform_i2c_write_read()
+platform_i2c_deinit()
 ```
 
-Library V1.1 改为实例级配置：
+具体如何完成 I2C 事务，由 Backend 通过 `platform_i2c_ops_t` 实现。
 
-```c
-typedef struct
-{
-    uint32_t halfPeriodUs;
-    uint32_t sclTimeoutUs;
-} platform_i2c_config_t;
-```
-
-并新增：
-
-```c
-platform_i2c_init_with_config(...)
-```
-
-原 `platform_i2c_init()` 继续保留，默认使用：
+## V2.0 架构
 
 ```text
-halfPeriodUs = 5
-sclTimeoutUs = 100
+Sensor / EEPROM Driver
+        │
+        ▼
+Platform I2C Contract
+        │
+        ▼
+platform_i2c_ops_t
+        │
+   ┌────┴─────────────┐
+   ▼                  ▼
+Software I2C       Hardware I2C
+GPIO Bit-bang      STM32 HAL 等
+当前已实现          后续按需增加
 ```
 
-因此旧项目可以无修改继续使用，同时新项目可以为不同 Software I2C Bus 设置不同 Timing。
+当前 Software I2C Backend 位于：
 
-## 典型使用
+```text
+04_Impl/impl_bus/software_i2c/
+```
+
+## Platform 职责
+
+Platform 仅负责：
+
+- I2C 总线对象与 Backend 绑定。
+- 7-bit 地址公共参数检查。
+- Write / Read / Write-Read 公共参数检查。
+- Backend Ops 分发。
+- 初始化状态与解除绑定。
+
+Platform 不负责：
+
+- START / STOP。
+- ACK / NACK。
+- GPIO Open Drain。
+- Clock Stretching。
+- Bit Timing。
+- 9-clock Bus Recovery。
+- STM32 HAL / LL 调用。
+
+上述内容均属于具体 Backend。
+
+## Software I2C 迁移
+
+V1.x：
 
 ```c
-platform_i2c_config_t config = {
-    .halfPeriodUs = 5U,
-    .sclTimeoutUs = 100U
-};
+platform_i2c_init(&i2c, "sensor_i2c", &scl, &sda);
+```
 
-platform_i2c_init_with_config(
+V2.0：
+
+```c
+impl_platform_i2c_soft_context_t context = {0};
+
+impl_platform_i2c_soft_construct(
     &i2c,
     "sensor_i2c",
     &scl,
     &sda,
-    &config);
+    &context);
 ```
 
-## 当前 Backend
+自定义时序：
 
-当前 `platform_i2c_t` 的实现本质上是 GPIO Bit-bang Software I2C。
+```c
+const impl_platform_i2c_soft_config_t config = {
+    .halfPeriodUs = 5U,
+    .sclTimeoutUs = 100U
+};
 
-它依赖：
+impl_platform_i2c_soft_construct_with_config(
+    &i2c,
+    "sensor_i2c",
+    &scl,
+    &sda,
+    &config,
+    &context);
+```
 
-- Platform GPIO
-- `platform_delay_us()`
+DHT20、MPU6050、AT24C02 等上层驱动继续只依赖 `platform_i2c_t` 和 `platform_i2c_write/read/write_read`，无需知道底层是 Software I2C 还是 Hardware I2C。
 
-它不是 STM32 HAL Hardware I2C Wrapper。
+## 后续扩展
 
-长期演进可以进一步形成：
+如实际项目需要 STM32 Hardware I2C，再新增：
 
 ```text
-I2C API
-├─ Software GPIO Backend
-└─ STM32 HAL Hardware I2C Backend
+04_Impl/impl_mcu/stm32f4/impl_platform_i2c_hal.c/.h
 ```
 
-当前版本暂不重构到多 Backend，以避免扩大变更面。
+并实现同一组 `platform_i2c_ops_t`，不修改传感器和 EEPROM 驱动。
 
-## 已有能力
+## 验证边界
 
-- START / STOP
-- 7-bit Address
-- Address ACK/NACK
-- Multi-byte Write
-- Multi-byte Read
-- Repeated START
-- Final-byte NACK
-- Clock Stretching wait
-- 9-clock bus recovery
-- Transaction failure cleanup
-- Probe
-- Deinit
-
-## 验证
-
-来源工程 Phase 3 记录：
-
-- Host Test PASS
-- Coding Standard Review PASS
-- Keil Full Rebuild PASS
-- DWT us delay target integration PASS
-- Serial Assistant smoke PASS
-- RTT smoke PASS
-- Logic Analyzer START / STOP PASS
-- Logic Analyzer Address / ACK PASS
-- Logic Analyzer Repeated START PASS
-- Logic Analyzer Read / Write transaction PASS
-
-Library V1.1 已更新 Host Test 源码，新增实例级 Timing 配置测试，但当前仓库尚未建立统一 Runner，因此 Library 重构版仍需重新执行。
-
-## 已知限制
-
-- GPIO 必须正确支持 Open Drain / release-high 语义。
-- 微秒 Timing 依赖底层 delay 精度。
-- 当前没有 Mutex；多 Task 共享同一 Bus 时需要由上层串行化或以后增加 Bus Lock。
-- 当前 API 名称仍是 `platform_i2c`，但实现仅为 Software I2C；后续如果加入 Hardware I2C，需要进一步抽象 Backend。
+原 Software I2C Host Test 已迁移到新的 Backend 构造入口。V2.0 重构后需要重新执行 Host Test 与目标板集成测试后，才能把新版本标记为完整 PASS。
