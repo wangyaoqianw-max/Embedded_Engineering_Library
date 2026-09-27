@@ -81,6 +81,7 @@ AI 辅助不改变本资产在仓库中的原创分类；如后续引入外部�
 
 | 日期 | 修改内容 |
 | --- | --- |
+| 2026-09-27 | I2C V2.0：Platform I2C 改为 Backend Contract，Software I2C 下沉至 Impl；上层事务 API 保持稳定。 |
 | 2026-09-26 | Software I2C 去除 `project_config.h` 依赖，新增实例级 Timing 配置与兼容默认入口。 |
 | 2026-09-25 | 新增 STM32F4 MCU Impl：GPIO/SPI/UART/Delay/IRQ/Reset/Watchdog；SPI/UART 改为 HAL Handle 注入，不依赖 CubeMX 全局符号。 |
 | 2026-09-25 | 从两个实际 STM32F4 项目回收 Platform MCU、Platform OS 与 CMSIS-RTOS2/FreeRTOS Adapter；核心通信和 OS 抽象开始形成跨项目基线。 |
@@ -93,10 +94,10 @@ AI 辅助不改变本资产在仓库中的原创分类；如后续引入外部�
 
 ## V1.3 新增模块说明
 
-- `03_Platform/platform_mcu/i2c/`：Software I2C 不再依赖项目级 `project_config.h`。
-- 新增 `platform_i2c_config_t` 与 `platform_i2c_init_with_config()`，支持每条 Software I2C Bus 独立配置 half period 与 SCL timeout。
-- 原 `platform_i2c_init()` 保留，默认使用来源工程验证过的 5 us / 100 us 配置。
-- 详细边界见 `03_Platform/platform_mcu/i2c/README.md`。
+- `03_Platform/platform_mcu/i2c/`：V2.0 收敛为 MCU 无关 I2C Contract，通过 `platform_i2c_ops_t` 分发 Backend。
+- 原 GPIO Bit-bang START/STOP/ACK/Clock Stretch/Bus Recovery 实现迁移到 `04_Impl/impl_bus/software_i2c/`。
+- 上层 `platform_i2c_probe/write/read/write_read` 调用保持稳定；初始化改为由具体 Backend 构造。
+- 后续可增加 STM32 HAL Hardware I2C Backend，而无需修改 DHT20、MPU6050、AT24C02 等设备驱动。
 
 ## V1.2 新增模块说明
 
