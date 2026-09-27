@@ -2,7 +2,7 @@
 
 ## 资产简介
 
-本资产提供一套面向 STM32 等嵌入式项目的分层固件骨架，采用 `APP → Service → Platform → Impl → HAL / Hardware` 的依赖方向。当前包含架构说明、SPSC 字节环形缓冲区、Platform 公共对象模型、GPIO/UART/SPI/I2C 等 MCU 抽象接口、OS 抽象接口、CMSIS-RTOS2/FreeRTOS Adapter、STM32F4 MCU Impl 和 Board 基础类型定义。
+本资产提供一套面向 STM32 等嵌入式项目的分层固件骨架，采用 `APP → Service → Platform → Impl → HAL / Hardware` 的依赖方向。当前包含架构说明、SPSC 字节环形缓冲区、Platform 公共对象模型、GPIO/UART/SPI/I2C 等 MCU 抽象接口、OS 抽象接口、CMSIS-RTOS2/FreeRTOS Adapter、STM32F4 MCU Impl 和 Board 基础类型定义。Software I2C 协议 Core 作为外部改编资产位于 `adapted/software_i2c_core/`。
 
 它适合作为新项目的结构参考和模块起点，不是可直接下载运行的完整固件工程。
 
@@ -81,7 +81,7 @@ AI 辅助不改变本资产在仓库中的原创分类；如后续引入外部�
 
 | 日期 | 修改内容 |
 | --- | --- |
-| 2026-09-27 | I2C V2.0：Platform I2C 改为 Backend Contract，Software I2C 下沉至 Impl；上层事务 API 保持稳定。 |
+| 2026-09-27 | I2C V2.0：Platform I2C 改为 Backend Contract；Software I2C Core 归入 adapted/Vendor，STM32F4 Impl 只负责适配。 |
 | 2026-09-26 | Software I2C 去除 `project_config.h` 依赖，新增实例级 Timing 配置与兼容默认入口。 |
 | 2026-09-25 | 新增 STM32F4 MCU Impl：GPIO/SPI/UART/Delay/IRQ/Reset/Watchdog；SPI/UART 改为 HAL Handle 注入，不依赖 CubeMX 全局符号。 |
 | 2026-09-25 | 从两个实际 STM32F4 项目回收 Platform MCU、Platform OS 与 CMSIS-RTOS2/FreeRTOS Adapter；核心通信和 OS 抽象开始形成跨项目基线。 |

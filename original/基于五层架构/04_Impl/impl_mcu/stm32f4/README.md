@@ -2,7 +2,7 @@
 
 ## 资产简介
 
-本目录为“五层架构”中的 Platform MCU 接口提供 STM32F4 实现，当前覆盖 GPIO、SPI、UART、DWT 微秒延时、IRQ、System Reset 和 Independent Watchdog。
+本目录为“五层架构”中的 Platform MCU 接口提供 STM32F4 实现，当前覆盖 GPIO、SPI、UART、Software I2C Adapter、DWT 微秒延时、IRQ、System Reset 和 Independent Watchdog。
 
 目标是让上层 Platform / Service 不直接依赖 STM32 HAL，同时避免 Library 绑定某个 CubeMX 工程的 `hspi1`、`hspi2`、`huart1` 全局符号。
 
@@ -115,7 +115,7 @@ UART Impl 保留：
 
 ## Delay
 
-`platform_delay_us()` 使用 Cortex-M DWT Cycle Counter，并限制单次等待不超过半个 32-bit 计数器周期。
+`platform_delay_us()` 使用 Cortex-M DWT Cycle Counter，并限制单次等待不超过半个 32-bit 计数器周期。Impl 内部同时提供 `impl_platform_delay_us()`，供同层模块复用，避免 Impl 反向依赖 Platform wrapper。
 
 Library 版同时补齐 `platform_delay_ms()`，默认转发到 STM32 HAL `HAL_Delay()`。
 
@@ -192,7 +192,7 @@ Library 版对 SPI/UART 构造入口进行了去全局 Handle 重构，目前尚
 
 ## 修改记录
 
-- 2026-09-25：从两个 STM32F4 项目沉淀 MCU Impl；SPI/UART 改为 HAL Handle 注入；补齐 millisecond delay；收录 IRQ/Reset/Watchdog。
+- 2026-09-27：新增 Software I2C Adapter；协议 Core 下沉为 adapted/Vendor 资产；补充 Impl 内部 DWT delay 入口。\n- 2026-09-25：从两个 STM32F4 项目沉淀 MCU Impl；SPI/UART 改为 HAL Handle 注入；补齐 millisecond delay；收录 IRQ/Reset/Watchdog。
 
 ## 复用性评审结论
 
