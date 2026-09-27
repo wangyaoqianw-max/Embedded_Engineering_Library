@@ -113,6 +113,34 @@ UART Impl 保留：
 
 因为 STM32 HAL 的 UART Callback 是全局入口，Library 使用最多 4 个 Context 的轻量 Registry，根据 `UART_HandleTypeDef *` 找回对应 Platform UART。
 
+## Software I2C
+
+STM32F4 Software I2C 不在 Impl 中实现完整协议状态机。
+
+Impl 只负责：
+
+- 配置 SCL/SDA 为 Open-Drain GPIO。
+- 将 STM32 GPIO Port/Pin 映射到 Software I2C Port Callback。
+- 注入 STM32F4 DWT 微秒延时。
+- 将 Software I2C Core Error 映射为 `platform_error_t`。
+- 将 Core API 绑定为 `platform_i2c_ops_t`。
+
+协议时序核心来自仓库的 `adapted/software_i2c_core/`；集成到实际 Firmware 工程时建议作为 `05_Vendors/software_i2c_core/`。
+
+依赖方向：
+
+```text
+Platform I2C
+    ↓
+STM32F4 Impl Adapter
+    ↓
+Software I2C Core
+    ↓
+HAL GPIO / DWT
+```
+
+后续 Hardware I2C 应新增并列的 `impl_platform_i2c_hal.*`，不修改 Platform Contract。
+
 ## Delay
 
 `platform_delay_us()` 使用 Cortex-M DWT Cycle Counter，并限制单次等待不超过半个 32-bit 计数器周期。Impl 内部同时提供 `impl_platform_delay_us()`，供同层模块复用，避免 Impl 反向依赖 Platform wrapper。
