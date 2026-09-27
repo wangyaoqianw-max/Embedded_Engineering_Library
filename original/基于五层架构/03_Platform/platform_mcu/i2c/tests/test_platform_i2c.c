@@ -4,10 +4,10 @@
  * All Rights Reserved.
  *
  * @file test_platform_i2c.c
- * @brief 验证 Platform Software I2C 同步事务合同
+ * @brief 验证 Platform I2C 契约与 Software I2C Backend
  * @author YaoQian Wang
  * @date 2026-09-02
- * @version V1.1
+ * @version V2.0
  *
  *****************************************************************************/
 
@@ -16,6 +16,7 @@
 #include <string.h>
 
 #include "platform_i2c.h"
+#include "impl_platform_i2c_soft.h"
 //******************************** Includes *********************************//
 
 //******************************** Defines *********************************//
@@ -93,6 +94,7 @@ typedef struct
 typedef struct
 {
     platform_i2c_t i2c;
+    impl_platform_i2c_soft_context_t softContext;
     platform_gpio_t scl;
     platform_gpio_t sda;
     test_gpio_context_t sclContext;
@@ -379,16 +381,19 @@ static int assert_clocked_byte(
 
 static int test_init_rejects_null_required_objects(void)
 {
+    test_fixture_t fixture;
     platform_i2c_t i2c = PLATFORM_I2C_INITIALIZER;
     platform_gpio_t scl = PLATFORM_GPIO_INITIALIZER;
     platform_gpio_t sda = PLATFORM_GPIO_INITIALIZER;
 
+    (void)memset(&fixture, 0, sizeof(fixture));
+
     TEST_ASSERT(PLATFORM_ERR_INVALID_PARAM ==
-                platform_i2c_init(NULL, "test_i2c", &scl, &sda));
+                impl_platform_i2c_soft_construct(NULL, "test_i2c", &scl, &sda, &fixture.softContext));
     TEST_ASSERT(PLATFORM_ERR_INVALID_PARAM ==
-                platform_i2c_init(&i2c, "test_i2c", NULL, &sda));
+                impl_platform_i2c_soft_construct(&i2c, "test_i2c", NULL, &sda, &fixture.softContext));
     TEST_ASSERT(PLATFORM_ERR_INVALID_PARAM ==
-                platform_i2c_init(&i2c, "test_i2c", &scl, NULL));
+                impl_platform_i2c_soft_construct(&i2c, "test_i2c", &scl, NULL, &fixture.softContext));
 
     return 0;
 }
@@ -403,10 +408,11 @@ static int test_init_configures_open_drain_output_and_releases_bus(void)
     }
 
     TEST_ASSERT(PLATFORM_ERR_OK ==
-                platform_i2c_init(&fixture.i2c,
-                                  "test_i2c",
-                                  &fixture.scl,
-                                  &fixture.sda));
+                impl_platform_i2c_soft_construct(&fixture.i2c,
+                                                 "test_i2c",
+                                                 &fixture.scl,
+                                                 &fixture.sda,
+                                                 &fixture.softContext));
     TEST_ASSERT(1U == fixture.sclContext.configureCallCount);
     TEST_ASSERT(1U == fixture.sdaContext.configureCallCount);
     TEST_ASSERT(PLATFORM_GPIO_DIRECTION_OUTPUT ==
@@ -451,10 +457,11 @@ static int test_init_recovers_sda_stuck_low_and_generates_stop(void)
                        sizeof(sdaReads) / sizeof(sdaReads[0]));
 
     TEST_ASSERT(PLATFORM_ERR_OK ==
-                platform_i2c_init(&fixture.i2c,
-                                  "test_i2c",
-                                  &fixture.scl,
-                                  &fixture.sda));
+                impl_platform_i2c_soft_construct(&fixture.i2c,
+                                                 "test_i2c",
+                                                 &fixture.scl,
+                                                 &fixture.sda,
+                                                 &fixture.softContext));
     TEST_ASSERT(2U == count_events(&fixture.recorder,
                                   TEST_EVENT_WRITE,
                                   TEST_LINE_SCL,
@@ -481,10 +488,11 @@ static int test_init_fails_when_scl_cannot_become_high(void)
     fixture.sclContext.defaultReadLevel = PLATFORM_GPIO_LEVEL_LOW;
 
     TEST_ASSERT(PLATFORM_ERR_TIMEOUT ==
-                platform_i2c_init(&fixture.i2c,
-                                  "test_i2c",
-                                  &fixture.scl,
-                                  &fixture.sda));
+                impl_platform_i2c_soft_construct(&fixture.i2c,
+                                                 "test_i2c",
+                                                 &fixture.scl,
+                                                 &fixture.sda,
+                                                 &fixture.softContext));
     TEST_ASSERT(0U == fixture.i2c.initialized);
     TEST_ASSERT(count_events(&fixture.recorder,
                              TEST_EVENT_DELAY,
@@ -511,10 +519,11 @@ static int test_transaction_rejects_non_idle_bus_without_recovery(void)
                        sdaReads,
                        sizeof(sdaReads) / sizeof(sdaReads[0]));
     TEST_ASSERT(PLATFORM_ERR_OK ==
-                platform_i2c_init(&fixture.i2c,
-                                  "test_i2c",
-                                  &fixture.scl,
-                                  &fixture.sda));
+                impl_platform_i2c_soft_construct(&fixture.i2c,
+                                                 "test_i2c",
+                                                 &fixture.scl,
+                                                 &fixture.sda,
+                                                 &fixture.softContext));
 
     fixture.recorder.sclRiseCount = 0U;
     TEST_ASSERT(PLATFORM_ERR_BUSY ==
@@ -544,10 +553,11 @@ static int test_write_generates_start_msb_bytes_ack_clocks_and_stop(void)
         return result;
     }
     TEST_ASSERT(PLATFORM_ERR_OK ==
-                platform_i2c_init(&fixture.i2c,
-                                  "test_i2c",
-                                  &fixture.scl,
-                                  &fixture.sda));
+                impl_platform_i2c_soft_construct(&fixture.i2c,
+                                                 "test_i2c",
+                                                 &fixture.scl,
+                                                 &fixture.sda,
+                                                 &fixture.softContext));
     script_read_values(&fixture.sdaContext,
                        sdaReads,
                        sizeof(sdaReads) / sizeof(sdaReads[0]));
@@ -605,10 +615,11 @@ static int test_address_nack_is_detected_on_ninth_clock(void)
         return result;
     }
     TEST_ASSERT(PLATFORM_ERR_OK ==
-                platform_i2c_init(&fixture.i2c,
-                                  "test_i2c",
-                                  &fixture.scl,
-                                  &fixture.sda));
+                impl_platform_i2c_soft_construct(&fixture.i2c,
+                                                 "test_i2c",
+                                                 &fixture.scl,
+                                                 &fixture.sda,
+                                                 &fixture.softContext));
     script_read_values(&fixture.sdaContext,
                        sdaReads,
                        sizeof(sdaReads) / sizeof(sdaReads[0]));
@@ -647,10 +658,11 @@ static int test_read_reconstructs_byte_and_sends_final_nack(void)
         return result;
     }
     TEST_ASSERT(PLATFORM_ERR_OK ==
-                platform_i2c_init(&fixture.i2c,
-                                  "test_i2c",
-                                  &fixture.scl,
-                                  &fixture.sda));
+                impl_platform_i2c_soft_construct(&fixture.i2c,
+                                                 "test_i2c",
+                                                 &fixture.scl,
+                                                 &fixture.sda,
+                                                 &fixture.softContext));
     script_read_values(&fixture.sdaContext,
                        sdaReads,
                        sizeof(sdaReads) / sizeof(sdaReads[0]));
@@ -701,10 +713,11 @@ static int test_multi_byte_read_sends_intermediate_ack_and_final_nack(void)
         return result;
     }
     TEST_ASSERT(PLATFORM_ERR_OK ==
-                platform_i2c_init(&fixture.i2c,
-                                  "test_i2c",
-                                  &fixture.scl,
-                                  &fixture.sda));
+                impl_platform_i2c_soft_construct(&fixture.i2c,
+                                                 "test_i2c",
+                                                 &fixture.scl,
+                                                 &fixture.sda,
+                                                 &fixture.softContext));
     script_read_values(&fixture.sdaContext,
                        sdaReads,
                        sizeof(sdaReads) / sizeof(sdaReads[0]));
@@ -750,10 +763,11 @@ static int test_write_read_uses_repeated_start_and_both_address_bits(void)
         return result;
     }
     TEST_ASSERT(PLATFORM_ERR_OK ==
-                platform_i2c_init(&fixture.i2c,
-                                  "test_i2c",
-                                  &fixture.scl,
-                                  &fixture.sda));
+                impl_platform_i2c_soft_construct(&fixture.i2c,
+                                                 "test_i2c",
+                                                 &fixture.scl,
+                                                 &fixture.sda,
+                                                 &fixture.softContext));
     script_read_values(&fixture.sdaContext,
                        sdaReads,
                        sizeof(sdaReads) / sizeof(sdaReads[0]));
@@ -800,10 +814,11 @@ static int test_data_nack_maps_to_io_and_stops_transaction(void)
         return result;
     }
     TEST_ASSERT(PLATFORM_ERR_OK ==
-                platform_i2c_init(&fixture.i2c,
-                                  "test_i2c",
-                                  &fixture.scl,
-                                  &fixture.sda));
+                impl_platform_i2c_soft_construct(&fixture.i2c,
+                                                 "test_i2c",
+                                                 &fixture.scl,
+                                                 &fixture.sda,
+                                                 &fixture.softContext));
     script_read_values(&fixture.sdaContext,
                        sdaReads,
                        sizeof(sdaReads) / sizeof(sdaReads[0]));
@@ -836,10 +851,11 @@ static int test_multi_byte_write_clocks_every_data_byte(void)
         return result;
     }
     TEST_ASSERT(PLATFORM_ERR_OK ==
-                platform_i2c_init(&fixture.i2c,
-                                  "test_i2c",
-                                  &fixture.scl,
-                                  &fixture.sda));
+                impl_platform_i2c_soft_construct(&fixture.i2c,
+                                                 "test_i2c",
+                                                 &fixture.scl,
+                                                 &fixture.sda,
+                                                 &fixture.softContext));
     script_read_values(&fixture.sdaContext,
                        sdaReads,
                        sizeof(sdaReads) / sizeof(sdaReads[0]));
@@ -871,10 +887,11 @@ static int test_transaction_scl_timeout_does_not_attempt_recovery(void)
         return result;
     }
     TEST_ASSERT(PLATFORM_ERR_OK ==
-                platform_i2c_init(&fixture.i2c,
-                                  "test_i2c",
-                                  &fixture.scl,
-                                  &fixture.sda));
+                impl_platform_i2c_soft_construct(&fixture.i2c,
+                                                 "test_i2c",
+                                                 &fixture.scl,
+                                                 &fixture.sda,
+                                                 &fixture.softContext));
     fixture.sclContext.defaultReadLevel = PLATFORM_GPIO_LEVEL_LOW;
     fixture.recorder.sclRiseCount = 0U;
 
@@ -902,10 +919,11 @@ static int test_gpio_failure_is_preserved_after_best_effort_stop(void)
         return result;
     }
     TEST_ASSERT(PLATFORM_ERR_OK ==
-                platform_i2c_init(&fixture.i2c,
-                                  "test_i2c",
-                                  &fixture.scl,
-                                  &fixture.sda));
+                impl_platform_i2c_soft_construct(&fixture.i2c,
+                                                 "test_i2c",
+                                                 &fixture.scl,
+                                                 &fixture.sda,
+                                                 &fixture.softContext));
     script_read_values(&fixture.sdaContext,
                        sdaReads,
                        sizeof(sdaReads) / sizeof(sdaReads[0]));
@@ -938,10 +956,11 @@ static int test_initial_start_failure_preserves_error_and_releases_bus(void)
         return result;
     }
     TEST_ASSERT(PLATFORM_ERR_OK ==
-                platform_i2c_init(&fixture.i2c,
-                                  "test_i2c",
-                                  &fixture.scl,
-                                  &fixture.sda));
+                impl_platform_i2c_soft_construct(&fixture.i2c,
+                                                 "test_i2c",
+                                                 &fixture.scl,
+                                                 &fixture.sda,
+                                                 &fixture.softContext));
     script_read_values(&fixture.sdaContext,
                        sdaReads,
                        sizeof(sdaReads) / sizeof(sdaReads[0]));
@@ -974,10 +993,11 @@ static int test_stop_failure_is_returned_after_best_effort_bus_release(void)
         return result;
     }
     TEST_ASSERT(PLATFORM_ERR_OK ==
-                platform_i2c_init(&fixture.i2c,
-                                  "test_i2c",
-                                  &fixture.scl,
-                                  &fixture.sda));
+                impl_platform_i2c_soft_construct(&fixture.i2c,
+                                                 "test_i2c",
+                                                 &fixture.scl,
+                                                 &fixture.sda,
+                                                 &fixture.softContext));
     script_read_values(&fixture.sdaContext,
                        sdaReads,
                        sizeof(sdaReads) / sizeof(sdaReads[0]));
@@ -1004,10 +1024,11 @@ static int test_init_recovery_failure_returns_busy_after_nine_clocks(void)
     fixture.sdaContext.defaultReadLevel = PLATFORM_GPIO_LEVEL_LOW;
 
     TEST_ASSERT(PLATFORM_ERR_BUSY ==
-                platform_i2c_init(&fixture.i2c,
-                                  "test_i2c",
-                                  &fixture.scl,
-                                  &fixture.sda));
+                impl_platform_i2c_soft_construct(&fixture.i2c,
+                                                 "test_i2c",
+                                                 &fixture.scl,
+                                                 &fixture.sda,
+                                                 &fixture.softContext));
     TEST_ASSERT(9U == count_events(&fixture.recorder,
                                   TEST_EVENT_WRITE,
                                   TEST_LINE_SCL,
@@ -1027,10 +1048,11 @@ static int test_deinit_releases_lines_and_deconfigures_sda_then_scl(void)
         return result;
     }
     TEST_ASSERT(PLATFORM_ERR_OK ==
-                platform_i2c_init(&fixture.i2c,
-                                  "test_i2c",
-                                  &fixture.scl,
-                                  &fixture.sda));
+                impl_platform_i2c_soft_construct(&fixture.i2c,
+                                                 "test_i2c",
+                                                 &fixture.scl,
+                                                 &fixture.sda,
+                                                 &fixture.softContext));
     fixture.recorder.eventCount = 0U;
 
     TEST_ASSERT(PLATFORM_ERR_OK == platform_i2c_deinit(&fixture.i2c));
@@ -1070,16 +1092,17 @@ static int test_deinit_waits_for_scl_and_continues_cleanup_after_timeout(void)
         return result;
     }
     TEST_ASSERT(PLATFORM_ERR_OK ==
-                platform_i2c_init(&fixture.i2c,
-                                  "test_i2c",
-                                  &fixture.scl,
-                                  &fixture.sda));
+                impl_platform_i2c_soft_construct(&fixture.i2c,
+                                                 "test_i2c",
+                                                 &fixture.scl,
+                                                 &fixture.sda,
+                                                 &fixture.softContext));
     fixture.sclContext.defaultReadLevel = PLATFORM_GPIO_LEVEL_LOW;
     sdaWriteCountBeforeDeinit = fixture.sdaContext.writeCallCount;
     fixture.recorder.eventCount = 0U;
 
     TEST_ASSERT(PLATFORM_ERR_TIMEOUT == platform_i2c_deinit(&fixture.i2c));
-    TEST_ASSERT(PLATFORM_I2C_DEFAULT_SCL_TIMEOUT_US ==
+    TEST_ASSERT(IMPL_PLATFORM_I2C_SOFT_DEFAULT_SCL_TIMEOUT_US ==
                 count_events(&fixture.recorder,
                              TEST_EVENT_DELAY,
                              TEST_LINE_NONE,
@@ -1103,15 +1126,17 @@ static int test_contract_validation_remains_stable(void)
         return result;
     }
     TEST_ASSERT(PLATFORM_ERR_OK ==
-                platform_i2c_init(&fixture.i2c,
-                                  "test_i2c",
-                                  &fixture.scl,
-                                  &fixture.sda));
+                impl_platform_i2c_soft_construct(&fixture.i2c,
+                                                 "test_i2c",
+                                                 &fixture.scl,
+                                                 &fixture.sda,
+                                                 &fixture.softContext));
     TEST_ASSERT(PLATFORM_ERR_ALREADY_INITIALIZED ==
-                platform_i2c_init(&fixture.i2c,
-                                  "test_i2c",
-                                  &fixture.scl,
-                                  &fixture.sda));
+                impl_platform_i2c_soft_construct(&fixture.i2c,
+                                                 "test_i2c",
+                                                 &fixture.scl,
+                                                 &fixture.sda,
+                                                 &fixture.softContext));
     TEST_ASSERT(PLATFORM_ERR_INVALID_PARAM ==
                 platform_i2c_write(&fixture.i2c, 0x80U, &txData, 1U));
     TEST_ASSERT(PLATFORM_ERR_INVALID_PARAM ==
@@ -1164,7 +1189,7 @@ static int test_operations_reject_uninitialized_object(void)
 static int test_instance_timing_config_is_stored_per_bus(void)
 {
     test_fixture_t fixture;
-    const platform_i2c_config_t config = {
+    const impl_platform_i2c_soft_config_t config = {
         7U,
         23U
     };
@@ -1175,13 +1200,15 @@ static int test_instance_timing_config_is_stored_per_bus(void)
     }
 
     TEST_ASSERT(PLATFORM_ERR_OK ==
-                platform_i2c_init_with_config(&fixture.i2c,
-                                              "custom_i2c",
-                                              &fixture.scl,
-                                              &fixture.sda,
-                                              &config));
-    TEST_ASSERT(7U == fixture.i2c.halfPeriodUs);
-    TEST_ASSERT(23U == fixture.i2c.sclTimeoutUs);
+                impl_platform_i2c_soft_construct_with_config(
+                    &fixture.i2c,
+                    "custom_i2c",
+                    &fixture.scl,
+                    &fixture.sda,
+                    &config,
+                    &fixture.softContext));
+    TEST_ASSERT(7U == fixture.softContext.halfPeriodUs);
+    TEST_ASSERT(23U == fixture.softContext.sclTimeoutUs);
     TEST_ASSERT(PLATFORM_ERR_OK == platform_i2c_deinit(&fixture.i2c));
 
     return 0;
