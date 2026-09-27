@@ -4,8 +4,8 @@
 
 ## 依赖与边界
 - 依赖同资产中的 `platform_common`。
-- GPIO/UART/SPI 通过 Ops/对象模型由 Impl 层注入具体实现。
-- 当前 `platform_i2c.c` 是 GPIO bit-bang Software I2C，并仍引用项目级 `project_config.h` 中的时序参数，因此尚未完全参数化；迁移新项目时必须提供对应配置或先完成配置解耦。
+- GPIO/UART/SPI/I2C 通过 Ops/对象模型由 Impl 层注入具体实现。
+- I2C V2.0 只保留 MCU 无关 Contract；GPIO Bit-bang 已下沉到 `04_Impl/impl_bus/software_i2c/` Backend。后续可按需增加 STM32 HAL Hardware I2C Backend。
 - IRQ、Reset、Watchdog 当前主要是抽象接口，具体行为由 Impl 层提供。
 
 ## 验证
