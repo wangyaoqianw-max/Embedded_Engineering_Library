@@ -220,7 +220,8 @@ Library 版对 SPI/UART 构造入口进行了去全局 Handle 重构，目前尚
 
 ## 修改记录
 
-- 2026-09-27：新增 Software I2C Adapter；协议 Core 下沉为 adapted/Vendor 资产；补充 Impl 内部 DWT delay 入口。\n- 2026-09-25：从两个 STM32F4 项目沉淀 MCU Impl；SPI/UART 改为 HAL Handle 注入；补齐 millisecond delay；收录 IRQ/Reset/Watchdog。
+- 2026-09-27：新增 Software I2C Adapter；协议 Core 下沉为 adapted/Vendor 资产；补充 Impl 内部 DWT delay 入口。
+- 2026-09-25：从两个 STM32F4 项目沉淀 MCU Impl；SPI/UART 改为 HAL Handle 注入；补齐 millisecond delay；收录 IRQ/Reset/Watchdog。
 
 ## 复用性评审结论
 
